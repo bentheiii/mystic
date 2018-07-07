@@ -1,0 +1,1 @@
+from mysticCLI.run import main

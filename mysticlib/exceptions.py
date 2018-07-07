@@ -1,0 +1,2 @@
+class BadKey(ValueError):
+    pass
