@@ -8,9 +8,9 @@ verify_ssl = true
 
 flask = "*"
 cryptography = "*"
+gunicorn = "*"
 
 
 [requires]
 
 python_version = "3.7"
-gunicorn3 = "*"

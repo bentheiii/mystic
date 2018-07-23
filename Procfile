@@ -1,1 +1,1 @@
-web: gunicorn3 mysricweb.app
+web: python -m gunicorn mysticweb:app
