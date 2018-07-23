@@ -1,1 +1,1 @@
-web: gunicorn mysricweb.app
+web: gunicorn3 mysricweb.app
