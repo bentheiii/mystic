@@ -38,12 +38,26 @@
         }
     }
 
+    function set_what_is_this(display){
+        let what_is_this_a = document.getElementById('what_is_this_a');
+        if (display){
+            what_is_this_a.innerHTML = "<br\>This filter will be applied before the result is returned. This saves on bandwidth, but you won't be able to look up entries that don't match this filter.";
+        }
+        else{
+            what_is_this_a.innerHTML = "What is this?";
+        }
+        what_is_this_a.onclick = function () {
+            set_what_is_this(!display);
+        };
+    }
+
     onload = function () {
         {% if url %}
         document.getElementById('url_input').value = "{{url|safe}}";
         document.getElementById('src_url_rb').checked = true;
         document.getElementById('url_remember_cb').checked = true;
         {% endif %}
+        set_what_is_this(false);
     };
 
 </script>
@@ -69,7 +83,8 @@ Enter Input
     <label><input type="checkbox"
                   id="pw_showhide_checkbox"
                   onclick="toggle_showhide()"> show password</label></p>
-    <p>pre-load filter: <label><input name="pre_load_filter" type="text"></label></p> <!--todo what is this-->
+    <p>pre-load filter: <label><input name="pre_load_filter" type="text"></label>
+        <a href="javascript:void(0);" id="what_is_this_a"></a></p>
     <p>
         <input type=submit value=submit>
     </p>

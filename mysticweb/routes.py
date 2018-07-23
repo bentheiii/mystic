@@ -37,7 +37,7 @@ def process_input(raw_source, password, pre_load_filter):
 
         if pre_load_filter:
             d = ((k, str(v)) for (k, v) in mystic.items() if
-                 fuzzy_in(pre_load_filter, k))  # todo smarter filtering (in js too)
+                 fuzzy_in(pre_load_filter, k))
         else:
             d = ((k, str(v)) for (k, v) in mystic.items())
         d = list(d)
@@ -51,7 +51,7 @@ def main():
     c_url = request.cookies.get('url_rem', '')
 
     if request.method == 'POST':
-        if request.form.get('source_kind') == 'url':  # todo remember
+        if request.form.get('source_kind') == 'url':
             url = request.form.get('url')
             if request.form.get('url_remember'):
                 rem_url = url
