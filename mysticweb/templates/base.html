@@ -1,5 +1,6 @@
 <!doctype html>
 <html>
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 <head>
 {% block head %}
 <style>
@@ -7,6 +8,7 @@
     max-width: 1000px;
     text-align: center;
     margin: auto;
+    background-color: lightblue;
 }
 </style>
 {% endblock %}
@@ -23,7 +25,7 @@
 <div id="content">{% block content %}{% endblock %}</div>
 <div id="footer">
 {% block footer %}
-MIT License <a href="http://github.com/bentheiii/mystic">github</a>
+Copyright Ben Avrahami. MIT License <a href="/src">source</a>. <a href="\about">about</a>
 {% endblock %}
 </div>
 </body>

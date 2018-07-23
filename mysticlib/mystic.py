@@ -2,7 +2,7 @@
 
 from typing import Callable, Optional, Type, Dict
 from abc import ABC, abstractmethod
-from io import IOBase
+from io import BytesIO
 
 from typing import MutableMapping
 
@@ -35,7 +35,7 @@ class Mystic(ABC, MutableMapping[str, str]):
 
     @classmethod
     @abstractmethod
-    def from_stream(cls, src: IOBase, check_header=True) -> 'Mystic':
+    def from_stream(cls, src: BytesIO, check_header=True) -> 'Mystic':
         assert check_header
         header = src.readline().rstrip()
         subclass = cls.headers.get(header,None)
@@ -52,7 +52,7 @@ class Mystic(ABC, MutableMapping[str, str]):
         pass
 
     @abstractmethod
-    def to_stream(self, dst: IOBase, minor=None):
+    def to_stream(self, dst: BytesIO, minor=None):
         pass
 
     @property

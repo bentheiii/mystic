@@ -2,68 +2,106 @@
 {% block head %}
 {{ super() }}
 <script>
-"use strict";
+    "use strict";
 
-function toggle_showhide(){
-    let pw_input = document.getElementById("pw_input");
-    let pw_showhide_checkbox = document.getElementById("pw_showhide_checkbox");
-    pw_input.type = pw_showhide_checkbox.checked ? "text" : "password";
-}
-function validate_form(){
-    let source_value = null;
-    let radios = document.getElementsByName('source_kind');
-    for (let i = 0, length = radios.length; i < length; i++)
-    {
-        if (radios[i].checked)
-        {
-        source_value = radios[i].value;
-        break;
+    let items;
+    /*
+    items = {{results | tojson}}
+    items = items.reduce(function (map, obj) {
+        map[obj[0]] = obj[1];
+        return map;
+    }, {});
+    //*/
+
+    //*
+    items = {};
+    items['abc'] = 'cba';
+    items['kabka'] = 'rabarka';
+    items['abra'] = 'kadabra';
+    items['katabcara'] = 'magic';
+    items['crne'] = 'crna';
+    items['lorna'] = 'lorna';
+    //*/
+
+    function update_list(filter = null) {
+        if (filter === null) {
+            filter = document.getElementById("filter_input").value;
         }
+        let accepted, ret;
+        if (filter === "") {
+            accepted = Object.keys(items);
+        }
+        else {
+            accepted = Object.keys(items).filter(x => (x.includes(filter)));
+        }
+        ret = [];
+        for (let a of accepted) {
+            ret.push(`<a href="javascript:void(0);" onclick="set_result_view('${a}')" class="objlink"><li class="horzitem">${a}</li></a>`);
+        }
+        ret = ret.join("");
+        document.getElementById("item_list").innerHTML = ret;
+        //console.log(ret)
     }
-    if (source_value === null){
-        alert('must choose a source');
+
+    function set_result_view(key) {
+        document.getElementById('result_view').innerHTML = key+': '+items[key];
         return false;
     }
-
-    if (source_value == 'url'){
-        if (document.getElementById("url_input").value == ""){
-            alert('please enter a url');
-            return false;
+    const start_time= Math.floor(new Date().getTime() / 1000);
+    let time_limit_seconds = 30*60;
+    let time_left_a;
+    function update_timer(){
+        const current_time = Math.floor(new Date().getTime() / 1000);
+        let time_left = time_limit_seconds - (current_time - start_time);
+        if (time_left <= 0){
+            window.location.href = '/'
         }
+        let seconds = time_left % 60;
+        let minutes = (time_left-seconds) / 60;
+        time_left_a.innerHTML = minutes + ':' + seconds;
     }
-    else{
-        if (document.getElementById("file_input").value == ""){
-            alert('please enter a file');
-            return false;
-        }
+
+    onload = function () {
+        time_left_a = document.getElementById('time_left_a');
+        update_list();
+        setInterval(update_timer, 1000);
     }
-}
-
-
-
+    //todo timer
 </script>
+<style>
+    .horlist {
+        list-style-type: none;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+
+    .horzitem {
+        padding: 10px;
+        display: inline-block
+    }
+
+    .objlink {
+        color: blue
+    }
+
+    .objlink.clicked {
+        color: blue;
+    }
+
+    .result{
+        background-color: black;
+        color: aliceblue;
+    }
+</style>
 {% endblock %}
 {% block title %}
-Enter Input
+View
 {% endblock %}
 {% block content %}
-<form method="post" enctype=multipart/form-data onsubmit="return validate_form()">
-    <div style="border-color:black;border-style:solid;border-width:1px;">
-        <p><label><input type="radio" name="source_kind" value="url" id="src_url_rb">from a raw web source:</label>
-            <input name="url"
-                   type="url" oninput="document.getElementById('src_url_rb').checked = true;" id="url_input">
-            <label><input type="checkbox" name="url_remember"/> remember</label></p>
-        <p><label><input type="radio" name="source_kind" value="file" id="src_file_rb"/>from a local file:</label> <input
-                name=file type=file style="width:200px;border-color:black;border-style:solid;border-width:1px;"
-                oninput="document.getElementById('src_file_rb').checked = true;" id="file_input"/>
-        </p>
-    </div>
-    enter password: <input name="password" type="password" id="pw_input"> <label><input type="checkbox"
-                                                                                        id="pw_showhide_checkbox"
-                                                                                        onclick="toggle_showhide()">
-    show password</label>
-    <p>
-        <input type=submit value=submit>
-    </p>
-</form>
+<p><label>filter: <input type="text" id="filter_input" oninput="update_list()"></label></p>
+<ul class="horlist" id="item_list"></ul>
+<p><span id="result_view" class="result"></span></p>
+<p>you will be automatically be redirected out in <a id="time_left_a"></a></p>
 {% endblock %}

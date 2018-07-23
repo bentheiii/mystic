@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}
+About
+{% endblock %}
+{% block header %}
+{{ super() }}
+About
+{% endblock %}
+{% block content %}
+<p>MysticWeb version {{version}}</p>
+<p>This site is meant for displaying mystic files. To learn more about mystics visit the <a href="\src">source code</a>.</p>
+{% endblock %}
