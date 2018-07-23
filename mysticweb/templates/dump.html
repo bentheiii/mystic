@@ -103,6 +103,9 @@
 View
 {% endblock %}
 {% block content %}
+{% if weak_warning %}
+<p><span style="background-color: lightcoral">WARNING: your password has been rated as {{weak_warning}}, consider changing it</span></p>
+{% endif %}
 <p><label>filter: <input type="text" id="filter_input" oninput="update_list()"></label></p>
 <ul class="horlist" id="item_list"></ul>
 <p><span id="result_view" class="result"></span></p>

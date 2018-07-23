@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from flask import render_template, request, redirect, send_from_directory, after_this_request
+from flask import render_template, request, redirect, send_from_directory, after_this_request, flash
 
 from mysticlib import Mystic, BadKey
 
@@ -22,7 +22,6 @@ def error(error_string):
 
 
 def process_input(raw_source, password, pre_load_filter):
-    # todo weak password warnings
     stream = BytesIO(raw_source)
     try:
         mystic = Mystic.from_stream(stream)
@@ -43,7 +42,15 @@ def process_input(raw_source, password, pre_load_filter):
         d = list(d)
     except BadKey:
         return error(repr('a bad password was entered'))
-    return render_template('dump.html', results=d)
+
+    p_str = pass_strength(password)
+
+    if p_str is not None:
+        weak_warning = p_str
+    else:
+        weak_warning = ''
+
+    return render_template('dump.html', results=d, weak_warning=weak_warning)
 
 
 @app.route('/', methods=['POST', 'GET'])

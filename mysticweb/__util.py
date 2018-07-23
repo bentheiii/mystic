@@ -2,6 +2,8 @@ from typing import Tuple, Union
 
 from socket import timeout
 from urllib.request import urlopen
+import re
+import itertools as it
 
 URL_LOAD_TIMEOUT = 10
 
@@ -13,7 +15,7 @@ def download_page(url) -> Tuple[bool, Union[bytes, Exception]]:
         return False, e
 
 
-def fuzzy_in(needle: str, haystack: str)->bool:
+def fuzzy_in(needle: str, haystack: str) -> bool:
     """
     >>> assert fuzzy_in('a b c','kabracda')
     >>> assert not fuzzy_in('ab ce','abec bac')
@@ -21,8 +23,50 @@ def fuzzy_in(needle: str, haystack: str)->bool:
     return all(n in haystack for n in needle.split())
 
 
-__all__ = ['download_page', 'fuzzy_in']
+def parts(max_, repeat):
+    re_parts = [f'[{a}]{{,{max_}}}' for a in ('a-z', 'A-Z', '0-9')]
+    return tuple(re.compile(r' ?'.join(p)) for p in it.product(re_parts, repeat=repeat))
+
+
+_weak_patterns = (
+    (re.compile(''),),
+    parts(4, 1),
+    parts(3, 2),
+    parts(2, 3),
+    parts(1, 4),
+)
+_weak_levels = (
+    'trivial',
+    'miserably weak',
+    'extremely weak',
+    'very weak',
+    'weak'
+)
+
+
+def pass_strength(password):
+    """
+    >>> _ = lambda x: _weak_levels.index(pass_strength(x))
+    >>> _("")
+    0
+    >>> _("abcd")
+    1
+    >>> _("1234")
+    1
+    >>> _("glu 12")
+    2
+    >>> _("gluer")
+    2
+    """
+    for level, patterns in zip(_weak_levels ,_weak_patterns):
+        if any(p.fullmatch(password) for p in patterns):
+            return level
+    return None
+
+
+__all__ = ['download_page', 'fuzzy_in', 'pass_strength']
 
 if __name__ == '__main__':
     import doctest
+
     doctest.testmod()
