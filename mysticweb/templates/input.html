@@ -38,6 +38,13 @@
         }
     }
 
+    onload = function () {
+        {% if url %}
+        document.getElementById('url_input').value = "{{url|safe}}";
+        document.getElementById('src_url_rb').checked = true;
+        document.getElementById('url_remember_cb').checked = true;
+        {% endif %}
+    };
 
 </script>
 {% endblock %}help
@@ -50,8 +57,8 @@ Enter Input
         <p><label><input type="radio" name="source_kind" value="url" id="src_url_rb">from a raw web source:</label>
             <label><input name="url"
                           type="url" oninput="document.getElementById('src_url_rb').checked = true;"
-                          id="url_input" value={{url|safe}}></label>
-            <label><input type="checkbox" name="url_remember"/> remember</label></p>
+                          id="url_input"></label>
+            <label><input type="checkbox" name="url_remember" id="url_remember_cb"/> remember</label></p>
         <p><label><input type="radio" name="source_kind" value="file" id="src_file_rb"/>from a local file:</label>
             <input
                     name=file type=file style="width:200px;border-color:black;border-style:solid;border-width:1px;"

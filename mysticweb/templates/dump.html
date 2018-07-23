@@ -5,7 +5,7 @@
     "use strict";
 
     let items;
-    /*
+    //*
     items = {{results | tojson}}
     items = items.reduce(function (map, obj) {
         map[obj[0]] = obj[1];
@@ -13,7 +13,7 @@
     }, {});
     //*/
 
-    //*
+    /*
     items = {};
     items['abc'] = 'cba';
     items['kabka'] = 'rabarka';
@@ -22,6 +22,10 @@
     items['crne'] = 'crna';
     items['lorna'] = 'lorna';
     //*/
+
+    function fuzzy_contains(needle, haystack){
+        return needle.split(" ").every(n=>haystack.includes(n))
+    }
 
     function update_list(filter = null) {
         if (filter === null) {
@@ -32,7 +36,7 @@
             accepted = Object.keys(items);
         }
         else {
-            accepted = Object.keys(items).filter(x => (x.includes(filter)));
+            accepted = Object.keys(items).filter(x => fuzzy_contains(filter,x));
         }
         ret = [];
         for (let a of accepted) {
@@ -50,14 +54,14 @@
     const start_time= Math.floor(new Date().getTime() / 1000);
     let time_limit_seconds = 30*60;
     let time_left_a;
-    function update_timer(){
+    function update_timer() {
         const current_time = Math.floor(new Date().getTime() / 1000);
         let time_left = time_limit_seconds - (current_time - start_time);
-        if (time_left <= 0){
+        if (time_left <= 0) {
             window.location.href = '/'
         }
         let seconds = time_left % 60;
-        let minutes = (time_left-seconds) / 60;
+        let minutes = (time_left - seconds) / 60;
         time_left_a.innerHTML = minutes + ':' + seconds;
     }
 

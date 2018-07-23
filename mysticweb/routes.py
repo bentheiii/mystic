@@ -37,7 +37,7 @@ def process_input(raw_source, password, pre_load_filter):
 
         if pre_load_filter:
             d = ((k, str(v)) for (k, v) in mystic.items() if
-                 (pre_load_filter in k))  # todo smarter filtering (in js too)
+                 fuzzy_in(pre_load_filter, k))  # todo smarter filtering (in js too)
         else:
             d = ((k, str(v)) for (k, v) in mystic.items())
         d = list(d)
@@ -48,6 +48,8 @@ def process_input(raw_source, password, pre_load_filter):
 
 @app.route('/', methods=['POST', 'GET'])
 def main():
+    c_url = request.cookies.get('url_rem', '')
+
     if request.method == 'POST':
         if request.form.get('source_kind') == 'url':  # todo remember
             url = request.form.get('url')
@@ -56,10 +58,11 @@ def main():
             else:
                 rem_url = ''
 
-            @after_this_request
-            def set_url_rem(response):
-                response.set_cookie('url_rem', rem_url)
-                return response
+            if rem_url != c_url:
+                @after_this_request
+                def set_url_rem(response):
+                    response.set_cookie('url_rem', rem_url)
+                    return response
 
             success, raw_source = download_page(url)
             if not success:
@@ -76,8 +79,7 @@ def main():
         pre_load_filter = request.form.get('pre_load_filter')
         return process_input(raw_source, password, pre_load_filter)
 
-    url = request.cookies.get('url_rem', '')
-    return render_template('input.html', url=url)
+    return render_template('input.html', url=c_url)
 
 
 @app.route('/about')
