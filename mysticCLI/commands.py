@@ -6,9 +6,19 @@ from getpass import getpass
 import re
 import textwrap
 
+import cryptography
+
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
 from mysticlib import Mystic
+import mysticlib
+
 from mysticCLI.resettable_timer import ResettableTimer
 from mysticCLI.__util import *
+import mysticCLI.__data as data
 
 
 class Command:
@@ -130,7 +140,7 @@ def _lookup(myst, auto_display_thresh=10, start=''):
 
         if disp:
             assert next_letters is None
-            print('query: '+pattern)
+            print('query: ' + pattern)
             c = sorted(candidates, key=lambda x: x[0])
             for i, (k, _) in enumerate(c):
                 print(f'#{i}\t{k}')
@@ -177,11 +187,11 @@ def add(key=None, value=None, *, myst, **kwargs):
     if not myst.mutable:
         return 'the myst is in read-only mode, use the enable_write command to enable editing'
     if key is None:
-        key = getpass('enter the key')
+        key = getpass('enter the key\n')
     if key in myst:
         return 'key already exists, use update or set_pair to change existing pairs'
     if value is None:
-        value = getpass(f'enter the value')
+        value = getpass(f'enter the value\n')
 
     myst[key] = value
     return 'pair added'
@@ -195,11 +205,11 @@ def update(key=None, value=None, *, myst, **kwargs):
     if not myst.mutable:
         return 'the myst is in read-only mode, use the enable_write command to enable editing'
     if key is None:
-        key = getpass('enter the key')
+        key = getpass('enter the key\n')
     if key not in myst:
         return 'key does not exists, use add or set_pair to add new pairs'
     if value is None:
-        value = getpass(f'enter the value')
+        value = getpass(f'enter the value\n')
     if value.endswith('['):
         value = value + myst[key] + ']'
     myst[key] = value
@@ -220,7 +230,7 @@ def update_search(pattern, value=None, *, myst, **kwargs):
     key, prev = r
 
     if value is None:
-        value = getpass(f'enter the value')
+        value = getpass(f'enter the value\n')
     if value.endswith('['):
         value = value + prev + ']'
     myst[key] = value
@@ -242,7 +252,7 @@ def update_lookup(value=None, *, myst, **kwargs):
     key, prev = r
 
     if value is None:
-        value = getpass(f'enter the value')
+        value = getpass(f'enter the value\n')
     if value.endswith('['):
         value = value + prev + ']'
     myst[key] = value
@@ -258,9 +268,9 @@ def set_pair(key=None, value=None, *, myst, **kwargs):
     if not myst.mutable:
         return 'the myst is in read-only mode, use the enable_write command to enable editing'
     if key is None:
-        key = getpass('enter the key')
+        key = getpass('enter the key\n')
     if value is None:
-        value = getpass(f'enter the value')
+        value = getpass(f'enter the value\n')
     myst[key] = value
     return 'pair set'
 
@@ -306,20 +316,18 @@ def enable_write(*, myst: Mystic, **kwargs):
 @Command
 def help(command=None, *, commands: Type[Command], **kwargs):
     """
-    Display help for all commands. Accepts an optional command name argument, if entered, only help for that command is displayed.
+    Display help for all commands. Accepts an optional command name argument, if entered, only help for command that include it in the name is displayed.
     """
-    if command is None:
-        coms = sorted(commands.all.items(), key=lambda x: x[0])
-    else:
-        v = commands.all.get(command, None)
-        if not v:
+    coms = sorted(commands.all.items(), key=lambda x: x[0])
+    if command is not None:
+        coms = [(k, v) for (k, v) in coms if command in k]
+        if not coms:
             return f'command {command} not found'
-        coms = [(command, v)]
 
     ret = []
     for n, v in coms:
         ret.append(v.sign)
-        ret.extend(textwrap.wrap(v.help, 100, initial_indent = '\t', subsequent_indent='\t'))
+        ret.extend(textwrap.wrap(v.help, 100, initial_indent='\t', subsequent_indent='\t'))
         ret.append('')
 
     return '\n'.join(ret)
@@ -349,8 +357,9 @@ def load(file=None, *, myst: Mystic, **kwargs):
     if not myst.mutable:
         return 'the myst is in read-only mode, use the enable_write command to enable editing'
     if file is not None:
-        with open(file) as r:
-            lines = (l.rstrip() for l in r.readlines())
+        with open(file, 'rt', encoding='utf-8') as r:
+            lines = r.readlines()
+            lines = (l.rstrip() for l in lines)
     else:
         lines = []
         print('enter lines to load')
@@ -380,12 +389,12 @@ def load(file=None, *, myst: Mystic, **kwargs):
 @Command
 def delete(key=None, *, myst, **kwargs):
     """
-    Deelte a key-value pair. Accepts a optional key. If the key is not entered, a secure input will be prompted to enter it.
+    Delete a key-value pair. Accepts a optional key. If the key is not entered, a secure input will be prompted to enter it.
     """
     if not myst.mutable:
         return 'the myst is in read-only mode, use the enable_write command to enable editing'
     if key is None:
-        key = getpass('enter the key')
+        key = getpass('enter the key\n')
     if key not in myst:
         return 'key not found'
     del myst[key]
@@ -425,4 +434,62 @@ def delete_lookup(*, myst, **kwargs):
 
     return 'pair deleted'
 
-#todo version
+
+@Command
+def version(**kwargs):
+    """
+    Display the version of this tool as well the version of all dependant libraries.
+    """
+    modules = [('mysticCLI', data), ('mysticlib', mysticlib), ('cryptography', cryptography)]
+    ret = '\n'.join(f'{n} v{v.__version__}' for (n, v) in modules)
+    return ret
+
+
+if pyperclip:
+    @Command
+    def get_clip(key, *, myst: Mystic, **kwargs):
+        """
+        Retrieve the value of a specific key and adds to the clipboard. Note that the key must match exactly, use either search or lookup for a fuzzy search. Takes the key as a single argument. This command will only be present if pyperclip is installed.
+        """
+        pyperclip.copy(myst[key])
+        return 'value copied to clipboard'
+
+
+    @Command
+    def search_clip(pattern, *, myst: Mystic, **kwargs):
+        """
+        Search for a key in the mystic and copies the value to the clipboard. Prompting you for all the possible keys matching a regular expression pattern. Accepts a regex pattern. This command will only be present if pyperclip is installed.
+        """
+        r = _search(myst, pattern)
+        if isinstance(r, str):
+            return r
+        k, v = r
+        pyperclip.copy(v)
+        return 'value copied to clipboard'
+
+
+    @Command
+    def lookup_clip(start='', *, myst, **kwargs):
+        """
+        Search for a key in the mystic and copies the value to the clipboard. Prompting you for additional letters to search for until only a few remain. Accepts an optional first characters to begin the search with. This command will only be present if pyperclip is installed.
+        """
+        r = _lookup(myst, start=start)
+        if isinstance(r, str):
+            return r
+        k, v = r
+        pyperclip.copy(v)
+        return 'value copied to clipboard'
+
+
+    @Command
+    def dump_clip(pattern='', separator=': ', *, myst: Mystic, **kwargs):
+        """
+        Get all the entries in the myst and copy thm to clipboard. Accepts an optional pattern and an optional separator. Only keys matching the pattern will be returned, and the separator will be between every key and value.  This command will only be present if pyperclip is installed.
+        """
+        p = re.compile(pattern)
+        ret = []
+        for k, v in myst.items():
+            if p.search(k):
+                ret.append(f'{k}{separator}{v}')
+        pyperclip.copy('\n'.join(ret))
+        return 'dump copied to clipboard'

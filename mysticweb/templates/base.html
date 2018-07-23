@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+{% block head %}
+<style>
+.content {
+    max-width: 1000px;
+    text-align: center;
+    margin: auto;
+}
+</style>
+{% endblock %}
+</head>
+<title>MysticWeb - {% block title %}{% endblock %}</title>
+<body class="content">
+<header>
+{% block header %}
+<h1><a href="/"><img src="/static/logo.png" alt="logo"
+                     style="max-width:100px;max-height:100px;width:auto;height:auto;">
+    Mystic Web Portal</a></h1>
+{% endblock %}
+</header>
+<div id="content">{% block content %}{% endblock %}</div>
+<div id="footer">
+{% block footer %}
+MIT License <a href="http://github.com/bentheiii/mystic">github</a>
+{% endblock %}
+</div>
+</body>
+</html>

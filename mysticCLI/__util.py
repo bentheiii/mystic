@@ -53,9 +53,12 @@ def get_command_sign(func):
     >>> def foo(a,b=None,  *, p, q, **kwargs): pass
     >>> get_command_sign(foo)
     'foo(a, b=None)'
+    >>> def foo(**kwargs): pass
+    >>> get_command_sign(foo)
+    'foo()'
     """
     sign = str(inspect.signature(func))
-    sign = re.sub(',? \*.*, \*\*kwargs\)',')',sign)
+    sign = re.sub(',?(\s*\*.*, )?\*\*kwargs\)',')',sign)
     return func.__name__+sign
 
 

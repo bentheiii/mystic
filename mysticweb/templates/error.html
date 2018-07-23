@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}
+Error
+{% endblock %}
+{% block header %}
+{{ super() }}
+Error
+{% endblock %}
+{% block content %}
+<p>An error occurred, you can return to the <a href="/">homepage</a></p>
+<p>Error details: {{ error_string }}</p>
+{% endblock %}

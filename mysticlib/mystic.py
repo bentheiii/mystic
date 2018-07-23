@@ -1,4 +1,4 @@
-from __future__ import annotations
+#from __future__ import annotations
 
 from typing import Callable, Optional, Type, Dict
 from abc import ABC, abstractmethod
@@ -15,15 +15,15 @@ class Mystic(ABC, MutableMapping[str, str]):
     def __init__(self):
         self.password_callback = None
 
-    headers: Dict[bytes, Type[Mystic]] = {}
-    formats: Dict[str, Type[Mystic]] = {}
+    headers: Dict[bytes, Type['Mystic']] = {}
+    formats: Dict[str, Type['Mystic']] = {}
 
     def __init_subclass__(cls):
         cls.headers[cls.header] = cls
         cls.formats[cls.format] = cls
 
     @classmethod
-    def new_from_format(cls, format_: str)->Mystic:
+    def new_from_format(cls, format_: str)->'Mystic':
         subclass = cls.formats.get(format_, None)
         if subclass is None:
             raise ValueError(f'unrecognized format {format_}')
@@ -35,7 +35,7 @@ class Mystic(ABC, MutableMapping[str, str]):
 
     @classmethod
     @abstractmethod
-    def from_stream(cls, src: IOBase, check_header=True) -> Mystic:
+    def from_stream(cls, src: IOBase, check_header=True) -> 'Mystic':
         assert check_header
         header = src.readline().rstrip()
         subclass = cls.headers.get(header,None)

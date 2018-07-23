@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block head %}
+{{ super() }}
+<script>
+    "use strict";
+
+    function toggle_showhide() {
+        let pw_input = document.getElementById("pw_input");
+        let pw_showhide_checkbox = document.getElementById("pw_showhide_checkbox");
+        pw_input.type = pw_showhide_checkbox.checked ? "text" : "password";
+    }
+
+    function validate_form() {
+        let source_value = null;
+        let radios = document.getElementsByName('source_kind');
+        for (let i = 0, length = radios.length; i < length; i++) {
+            if (radios[i].checked) {
+                source_value = radios[i].value;
+                break;
+            }
+        }
+        if (source_value === null) {
+            alert('must choose a source');
+            return false;
+        }
+
+        if (source_value === 'url') {
+            if (document.getElementById("url_input").value === "") {
+                alert('please enter a url');
+                return false;
+            }
+        }
+        else {
+            if (document.getElementById("file_input").value === "") {
+                alert('please enter a file');
+                return false;
+            }
+        }
+    }
+
+
+</script>
+{% endblock %}help
+{% block title %}
+Enter Input
+{% endblock %}
+{% block content %}
+<form method="post" enctype=multipart/form-data onsubmit="return validate_form()">
+    <div style="border-color:black;border-style:solid;border-width:1px;">
+        <p><label><input type="radio" name="source_kind" value="url" id="src_url_rb">from a raw web source:</label>
+            <label><input name="url"
+                          type="url" oninput="document.getElementById('src_url_rb').checked = true;"
+                          id="url_input"></label>
+            <label><input type="checkbox" name="url_remember"/> remember</label></p>
+        <p><label><input type="radio" name="source_kind" value="file" id="src_file_rb"/>from a local file:</label>
+            <input
+                    name=file type=file style="width:200px;border-color:black;border-style:solid;border-width:1px;"
+                    oninput="document.getElementById('src_file_rb').checked = true;" id="file_input"/>
+        </p>
+    </div>
+    <p>enter password: <label><input name="password" type="password" id="pw_input"></label>
+    <label><input type="checkbox"
+                  id="pw_showhide_checkbox"
+                  onclick="toggle_showhide()"> show password</label></p>
+    <p>pre-load filter: <label><input name="pre_load_filter" type="text"></label></p> <!--todo what is this-->
+    <p>
+        <input type=submit value=submit>
+    </p>
+</form>
+{% endblock %}

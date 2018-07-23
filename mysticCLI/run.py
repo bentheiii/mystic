@@ -8,14 +8,12 @@ from mysticlib import Mystic
 
 from mysticCLI.resettable_timer import ResettableTimer
 from mysticCLI.commands import Command
+from mysticCLI.__data import __version__, __author__
 from mysticCLI.__util import *
 
-__version__ = '0.1b'
-__author__ = 'ben avrahami'
-
 parser = argparse.ArgumentParser(description='A CLI tool for mystic files')
-parser.add_argument('source', action='store', type=str, default='*scm', nargs='?',
-                    help='the source mystic to load. * denotes a new file, a format can be specified after the *. Default is a new single coded myst (*scm).')
+parser.add_argument('source', action='store', type=str, default='!', nargs='?',
+                    help='the source mystic to load. * denotes a new file, a format can be specified after the *. Default is to ask for prompt. ! to ask for prompt.')
 parser.add_argument('-t', action='store', type=int, default=30, required=False, dest='timeout',
                     help='time, in minutes, before the program automatically shuts down, -1 to disable this feature.')
 parser.add_argument('-w', action='store', type=bool_or_ellipsis, default=..., required=False, dest='write',
@@ -69,11 +67,16 @@ def main(args=None):
         timer = GreyHole()
     else:
         timer = ResettableTimer(args.timeout * 60, sys.exit)
-    timer.start()
     kwargs = {}
 
+    while args.source == '!':
+        args.source = input('input file or method. * is for new file.\n')
+
     if args.source.startswith('*'):
-        myst = Mystic.new_from_format(args.source[1:])
+        form = args.source[1:]
+        if form == '':
+            form = 'scm'
+        myst = Mystic.new_from_format(form)
     else:
         kwargs['source_path'] = args.source
         with open(args.source, mode='br') as source:
@@ -95,19 +98,19 @@ def main(args=None):
             else:
                 raise
 
+    timer.start()
+
     print(
         f'Welcome to the mystic CLI console version {__version__}'
         '\nNEVER enter your master password as a function argument!'
         '\nTo see all the available functions, enter help')
-
-    while True:
-        try:
+    try:
+        while True:
             line = input()
-        except EOFError:
-            break
-        if not handle_line(line, throw=args.throw, myst=myst, timer=timer, **kwargs):
-            break
-    timer.cancel()
+            if not handle_line(line, throw=args.throw, myst=myst, timer=timer, **kwargs):
+                break
+    finally:
+        timer.cancel()
 
 
 if __name__ == '__main__':
