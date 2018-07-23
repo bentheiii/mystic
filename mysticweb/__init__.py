@@ -8,4 +8,3 @@ except ImportError:
 else:
     app.secret_key = __secret_key__
     del __secret_key__
-# todo icon

@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from flask import render_template, request, redirect, send_from_directory
+from flask import render_template, request, redirect, send_from_directory, after_this_request
 
 from mysticlib import Mystic, BadKey
 
@@ -10,16 +10,19 @@ from mysticweb.__data import __version__
 
 git_path = "http://github.com/bentheiii/mystic"
 
+
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(app.static_folder,
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 
 def error(error_string):
     return render_template('error.html', error_string=error_string), 400
 
 
 def process_input(raw_source, password, pre_load_filter):
+    # todo weak password warnings
     stream = BytesIO(raw_source)
     try:
         mystic = Mystic.from_stream(stream)
@@ -44,10 +47,21 @@ def process_input(raw_source, password, pre_load_filter):
 
 
 @app.route('/', methods=['POST', 'GET'])
-def get_file():
+def main():
     if request.method == 'POST':
         if request.form.get('source_kind') == 'url':  # todo remember
-            success, raw_source = download_page(request.form.get('url'))
+            url = request.form.get('url')
+            if request.form.get('url_remember'):
+                rem_url = url
+            else:
+                rem_url = ''
+
+            @after_this_request
+            def set_url_rem(response):
+                response.set_cookie('url_rem', rem_url)
+                return response
+
+            success, raw_source = download_page(url)
             if not success:
                 return error(str(raw_source))
         elif request.form.get('source_kind') == 'file':
@@ -61,7 +75,9 @@ def get_file():
         password = request.form.get('password')
         pre_load_filter = request.form.get('pre_load_filter')
         return process_input(raw_source, password, pre_load_filter)
-    return render_template('input.html')
+
+    url = request.cookies.get('url_rem', '')
+    return render_template('input.html', url=url)
 
 
 @app.route('/about')
