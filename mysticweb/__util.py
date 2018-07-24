@@ -20,8 +20,10 @@ def fuzzy_in(needle: str, haystack: str) -> bool:
     """
     >>> assert fuzzy_in('a b c','kabracda')
     >>> assert not fuzzy_in('ab ce','abec bac')
+    >>> assert fuzzy_in('aB ce','abcE')
     """
-    return all(n in haystack for n in needle.split())
+    haystack = haystack.lower()
+    return all(n.lower() in haystack for n in needle.split())
 
 
 def parts(max_, repeat):

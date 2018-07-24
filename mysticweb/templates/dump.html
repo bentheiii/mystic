@@ -24,7 +24,8 @@
     //*/
 
     function fuzzy_contains(needle, haystack){
-        return needle.split(" ").every(n=>haystack.includes(n))
+        haystack = haystack.toLowerCase();
+        return needle.split(" ").every(n=>haystack.includes(n.toLowerCase()));
     }
 
     function update_list(filter = null) {
