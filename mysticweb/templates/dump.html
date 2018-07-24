@@ -48,7 +48,7 @@
     }
 
     function set_result_view(key) {
-        document.getElementById('result_view').innerHTML = key+': '+items[key];
+        document.getElementById('result_view').innerHTML = '&nbsp;'+key+': '+items[key]+'&nbsp;';
         return false;
     }
     const start_time= Math.floor(new Date().getTime() / 1000);
@@ -89,10 +89,6 @@
         color: blue
     }
 
-    .objlink.clicked {
-        color: blue;
-    }
-
     .result{
         background-color: black;
         color: aliceblue;
@@ -103,11 +99,8 @@
 View
 {% endblock %}
 {% block content %}
-{% if weak_warning %}
-<p><span style="background-color: lightcoral">WARNING: your password has been rated as {{weak_warning}}, consider changing it</span></p>
-{% endif %}
 <p><label>filter: <input type="text" id="filter_input" oninput="update_list()"></label></p>
-<ul class="horlist" id="item_list"></ul>
+<div style="border: 1px solid black; display:inline-block; padding-left: 30px; padding-right: 30px;"><ul class="horlist" id="item_list"></ul></div>
 <p><span id="result_view" class="result"></span></p>
 <p>you will be automatically be redirected out in <a id="time_left_a"></a></p>
 {% endblock %}

@@ -1,0 +1,2 @@
+class DumpError(Exception):
+    pass

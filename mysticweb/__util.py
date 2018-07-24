@@ -2,6 +2,7 @@ from typing import Tuple, Union
 
 from socket import timeout
 from urllib.request import urlopen
+from urllib.parse import urlparse
 import re
 import itertools as it
 
@@ -24,8 +25,8 @@ def fuzzy_in(needle: str, haystack: str) -> bool:
 
 
 def parts(max_, repeat):
-    re_parts = [f'[{a}]{{,{max_}}}' for a in ('a-z', 'A-Z', '0-9')]
-    return tuple(re.compile(r' ?'.join(p)) for p in it.product(re_parts, repeat=repeat))
+    re_parts = [f'[{a}]{{,{max_}}}' for a in ('a-z', 'A-Z', '0-9', '\u05D0-\u05EA')]
+    return tuple(re.compile(r'[-\s_]?'.join(p)) for p in it.product(re_parts, repeat=repeat))
 
 
 _weak_patterns = (
@@ -58,13 +59,20 @@ def pass_strength(password):
     >>> _("gluer")
     2
     """
-    for level, patterns in zip(_weak_levels ,_weak_patterns):
+    for level, patterns in zip(_weak_levels, _weak_patterns):
         if any(p.fullmatch(password) for p in patterns):
             return level
     return None
 
 
-__all__ = ['download_page', 'fuzzy_in', 'pass_strength']
+def is_local(url):
+    parsed = urlparse(url)
+    if parsed.hostname in ('127.0.0.1', 'localhost'):
+        return True
+    return False
+
+
+__all__ = ['download_page', 'fuzzy_in', 'pass_strength', 'is_local']
 
 if __name__ == '__main__':
     import doctest

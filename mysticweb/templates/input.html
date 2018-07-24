@@ -38,22 +38,25 @@
         }
     }
 
-    function set_what_is_this(display){
+    function set_what_is_this(display) {
         let what_is_this_a = document.getElementById('what_is_this_a');
-        if (display){
+        let what_is_this_a_link = document.getElementById('what_is_this_a_link');
+        if (display) {
             what_is_this_a.innerHTML = "<br\>This filter will be applied before the result is returned. This saves on bandwidth, but you won't be able to look up entries that don't match this filter.";
+            what_is_this_a_link.innerHTML = "^";
         }
-        else{
-            what_is_this_a.innerHTML = "What is this?";
+        else {
+            what_is_this_a_link.innerHTML = "What is this?";
+            what_is_this_a.innerHTML = "";
         }
-        what_is_this_a.onclick = function () {
+        what_is_this_a_link.onclick = function () {
             set_what_is_this(!display);
         };
     }
 
     onload = function () {
         {% if url %}
-        document.getElementById('url_input').value = "{{url|safe}}";
+        document.getElementById('url_input').value = "{{url}}";
         document.getElementById('src_url_rb').checked = true;
         document.getElementById('url_remember_cb').checked = true;
         {% endif %}
@@ -67,7 +70,7 @@ Enter Input
 {% endblock %}
 {% block content %}
 <form method="post" enctype=multipart/form-data onsubmit="return validate_form()">
-    <div style="border-color:black;border-style:solid;border-width:1px;">
+    <div style="border: 1px solid black; display:inline-block; padding-left: 30px; padding-right: 30px;">
         <p><label><input type="radio" name="source_kind" value="url" id="src_url_rb">from a raw web source:</label>
             <label><input name="url"
                           type="url" oninput="document.getElementById('src_url_rb').checked = true;"
@@ -75,16 +78,16 @@ Enter Input
             <label><input type="checkbox" name="url_remember" id="url_remember_cb"/> remember</label></p>
         <p><label><input type="radio" name="source_kind" value="file" id="src_file_rb"/>from a local file:</label>
             <input
-                    name=file type=file style="width:200px;border-color:black;border-style:solid;border-width:1px;"
+                    name=file type=file style="width:200px;border: 1px solid black;"
                     oninput="document.getElementById('src_file_rb').checked = true;" id="file_input"/>
         </p>
     </div>
     <p>enter password: <label><input name="password" type="password" id="pw_input"></label>
-    <label><input type="checkbox"
-                  id="pw_showhide_checkbox"
-                  onclick="toggle_showhide()"> show password</label></p>
+        <label><input type="checkbox"
+                      id="pw_showhide_checkbox"
+                      onclick="toggle_showhide()"> show password</label></p>
     <p>pre-load filter: <label><input name="pre_load_filter" type="text"></label>
-        <a href="javascript:void(0);" id="what_is_this_a"></a></p>
+        <a id="what_is_this_a"></a><a href="javascript:void(0);" id="what_is_this_a_link"></a></p>
     <p>
         <input type=submit value=submit>
     </p>

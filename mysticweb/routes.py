@@ -1,14 +1,31 @@
 from io import BytesIO
 
-from flask import render_template, request, redirect, send_from_directory, after_this_request, flash
+from flask import render_template, request, redirect, send_from_directory, after_this_request, g
 
 from mysticlib import Mystic, BadKey
 
 from mysticweb.app import app
+from mysticweb.exceptions import DumpError
 from mysticweb.__util import *
-from mysticweb.__data import __version__
+from mysticweb.__data import *
 
 git_path = "http://github.com/bentheiii/mystic"
+
+
+def add_warning(warning):
+    try:
+        g.warnings.append(warning)
+    except AttributeError:
+        g.warnings = [warning]
+
+
+@app.before_request
+def startup():
+    g.__version__ = __version__
+    g.__author__ = __author__
+    if not request.is_secure and not is_local(request.url):
+        add_warning("This connection is non-local and not secure!"
+                    " Do not enter your password or mystic here unless you know what you're doing!")
 
 
 @app.route('/favicon.ico')
@@ -17,16 +34,19 @@ def favicon():
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
-def error(error_string):
-    return render_template('error.html', error_string=error_string), 400
+@app.errorhandler(DumpError)
+def error(e):
+    while e.__cause__:
+        e = e.__cause__
+    return render_template('error.html', error_string=f'{type(e).__name__}: {e.args[0]}'), 400
 
 
-def process_input(raw_source, password, pre_load_filter):
+def process_input(raw_source, password, pre_load_filter, check_weak=True):
     stream = BytesIO(raw_source)
     try:
         mystic = Mystic.from_stream(stream)
     except (ValueError, EOFError) as e:
-        return error(repr(e))
+        raise DumpError from e
     mystic.password_callback = lambda x: password
     try:
         try:
@@ -41,16 +61,15 @@ def process_input(raw_source, password, pre_load_filter):
             d = ((k, str(v)) for (k, v) in mystic.items())
         d = list(d)
     except BadKey:
-        return error(repr('a bad password was entered'))
+        raise DumpError('a bad password was entered')
 
-    p_str = pass_strength(password)
+    if check_weak:
+        p_str = pass_strength(password)
 
-    if p_str is not None:
-        weak_warning = p_str
-    else:
-        weak_warning = ''
+        if p_str is not None:
+            add_warning(f'your password has been rated as {p_str}, consider changing it!')
 
-    return render_template('dump.html', results=d, weak_warning=weak_warning)
+    return render_template('dump.html', results=d)
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -73,15 +92,15 @@ def main():
 
             success, raw_source = download_page(url)
             if not success:
-                return error(str(raw_source))
+                raise DumpError from raw_source
         elif request.form.get('source_kind') == 'file':
             file = request.files.get('file')
             try:
                 raw_source = file.read()
             except Exception as e:
-                return error(str(e))
+                raise DumpError from e
         else:
-            return error('the source kind must be valid')
+            raise DumpError('the source kind must be valid')
         password = request.form.get('password')
         pre_load_filter = request.form.get('pre_load_filter')
         return process_input(raw_source, password, pre_load_filter)
@@ -91,7 +110,7 @@ def main():
 
 @app.route('/about')
 def about():
-    return render_template('about.html', version=__version__)
+    return render_template('about.html')
 
 
 @app.route('/src')
