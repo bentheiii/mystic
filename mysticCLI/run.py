@@ -22,6 +22,7 @@ parser.add_argument('--nsecure', action='store_true', default=False, required=Fa
                     help='set the application to use a non-secure input method, in case the secure one is not supported')
 parser.add_argument('--throw', action='store_true', default=False, required=False, dest='throw',
                     help='throw all internal exceptions, used for debugging')
+parser.add_argument('--version', action='version', version=__version__)
 
 
 def handle_line(line: str, *, throw, **kwargs) -> bool:
