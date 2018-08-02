@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Dict, Type
 
-from getpass import getpass
 import re
 import textwrap
+import os.path
 
 import cryptography
 
@@ -14,6 +14,7 @@ except ImportError:
     pyperclip = None
 try:
     import tkinter as tk
+    from tkinter import filedialog as tk_filedialog
 except ImportError:
     tk = None
 
@@ -29,7 +30,7 @@ class Command:
     all: Dict[str, Command] = {}
 
     def __init__(self, func):
-        assert func.__name__ not in self.all
+        assert func.__name__ not in self.all, f'{func} overrides another command'
         self.all[func.__name__] = self
         self.sign = get_command_sign(func)
         self.help = textwrap.dedent(func.__doc__)
@@ -184,7 +185,7 @@ def lookup(start='', *, myst, **kwargs):
 
 
 @Command
-def add(key=None, value=None, *, myst, **kwargs):
+def add(key=None, value=None, *, myst, getpass, **kwargs):
     """
     Add a new key-value pair. Accepts a optional key and an optional value for the key. If the key or value is not entered, a secure input will be prompted to enter them.
     """
@@ -202,7 +203,7 @@ def add(key=None, value=None, *, myst, **kwargs):
 
 
 @Command
-def update(key=None, value=None, *, myst, **kwargs):
+def update(key=None, value=None, *, myst, getpass, **kwargs):
     """
     Update a key-value pair to a new value. Accepts a optional key and an optional value for the key. If the key or value is not entered, a secure input will be prompted to enter them. If the value ends with a '[', the previous value will be appended to its new value in square brackets.
     """
@@ -221,7 +222,7 @@ def update(key=None, value=None, *, myst, **kwargs):
 
 
 @Command
-def update_search(pattern, value=None, *, myst, **kwargs):
+def update_search(pattern, value=None, *, myst, getpass, **kwargs):
     """
     Update a key-value pair to a new value, searching for the key with a regex pattern. Accepts a regular expression pattern and an optional value. If the value is not provided, a secure input will be prompted to enter it. If the value ends with a '[', the previous value will be appended to its new value in square brackets.
     """
@@ -243,7 +244,7 @@ def update_search(pattern, value=None, *, myst, **kwargs):
 
 
 @Command
-def update_lookup(value=None, *, myst, **kwargs):
+def update_lookup(value=None, *, myst, getpass, **kwargs):
     """
     Update a key-value pair to a new value, looking for the key via simple search. Accepts an optional value. If the value is not provided, a secure input will be prompted to enter it. If the value ends with a '[', the previous value will be appended to its new value in square brackets.
     """
@@ -265,7 +266,7 @@ def update_lookup(value=None, *, myst, **kwargs):
 
 
 @Command
-def set_pair(key=None, value=None, *, myst, **kwargs):
+def set_pair(key=None, value=None, *, myst, getpass, **kwargs):
     """
     Set a key-value pair to a new value, regardless of whether the key already exists. Accepts an optional key and an optional value for the key. If the key or value is not entered, a secure input will be prompted to enter them.
     """
@@ -292,12 +293,22 @@ def quit(*, myst: Mystic, **kwargs):
 
 
 @Command
-def save(path=None, *, myst: Mystic, timer: ResettableTimer, **kwargs):
+def save(path=None, *, myst: Mystic, timer: ResettableTimer, source_path=None, **kwargs):
     """
-    Will save the mystic to a file. Accepts a path for the file. If the path is not provided, the mystic's source path will be used, if available. Will also reset the auto-close timer.
+    Will save the mystic to a file. Accepts a path for the file. If the path is not provided, the mystic's source path will be used, if available. Will also reset the auto-close timer. If tk is installed, if the path is "?", then a dialog box will open for the file's path.
     """
+    if path == '?':
+        if not tk:
+            raise ImportError('tkinter module not imported, this functionality is unavailable')
+        initialdir = None
+        if source_path:
+            initialdir = os.path.dirname(source_path)
+        path = tk_filedialog.asksaveasfilename(initialdir=initialdir,
+                                               filetypes=(("mystic files", "*.scm"), ("all files", "*.*")))
+        if not path:
+            return 'save cancelled'
     if path is None:
-        path = kwargs.get('source_path', None)
+        path = source_path
         if path is None:
             return 'A path must be entered for newly created files'
     with open(path, 'wb') as dst:
@@ -391,7 +402,7 @@ def load(file=None, *, myst: Mystic, **kwargs):
 
 
 @Command
-def delete(key=None, *, myst, **kwargs):
+def delete(key=None, *, myst, getpass, **kwargs):
     """
     Delete a key-value pair. Accepts a optional key. If the key is not entered, a secure input will be prompted to enter it.
     """
@@ -521,3 +532,59 @@ if pyperclip:
                 ret.append(f'{k}{separator}{v}')
         pyperclip.copy('\n'.join(ret))
         return 'dump copied to clipboard'
+
+if tk:
+    def _edit(key, old_val=None, *, myst, tk_root, **kwargs):
+        if old_val is None:
+            if key in myst:
+                old_val = myst[key]
+            else:
+                old_val = ''
+        new_val = askstring(initialvalue=old_val, prompt='enter new value:', title='new value input',
+                            parent=tk_root)
+        if new_val is None:
+            return 'edit cancelled'
+        if new_val == old_val:
+            return 'no change'
+        if not myst.mutable:
+            return 'the myst is in read-only mode, use the enable_write command to enable editing'
+        myst[key] = new_val
+        return 'pair updated'
+
+
+    @Command
+    def edit(key=None, *, myst, getpass, **kwargs):
+        """
+        Update a key-value pair to a new value, opening a dialog text edit box. Accepts a optional key. If the key is not entered, a secure input will be prompted to enter it.
+        """
+        if key is None:
+            key = getpass('enter the key\n')
+        return _edit(key, myst=myst, **kwargs)
+
+
+    @Command
+    def edit_search(pattern, *, myst, **kwargs):
+        """
+        Update a key-value pair to a new value, searching for the key with a regex pattern and opening a dialog text box. Accepts a regular expression pattern.
+        """
+        if not myst.mutable:
+            return 'the myst is in read-only mode, use the enable_write command to enable editing'
+
+        r = _search(myst, pattern)
+        if isinstance(r, str):
+            return r
+        return _edit(*r, myst=myst, **kwargs)
+
+
+    @Command
+    def edit_lookup(*, myst, **kwargs):
+        """
+        Update a key-value pair to a new value, looking for the key via simple search and opening a dialog text box.
+        """
+        if not myst.mutable:
+            return 'the myst is in read-only mode, use the enable_write command to enable editing'
+
+        r = _lookup(myst)
+        if isinstance(r, str):
+            return r
+        return _edit(*r, myst=myst, **kwargs)

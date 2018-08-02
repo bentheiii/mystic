@@ -2,7 +2,7 @@
 # each entry is encrypted todo
 # whole file is encrypted and each entry is encrypted todo
 
-__version__ = '0.1.dev'
+__version__ = '0.5.1'
 __author__ = 'Ben Avrahami'
 
 from mysticlib.mystic import Mystic

@@ -42,6 +42,8 @@ class SingleCodedMystic(Mystic):
         raise BadKey('bad key')
 
     def _commit(self, minor=None):
+        if self.cached_dict is None and self.coded_dict is None:
+            self.cached_dict = {}
         assert self.cached_dict is not None
         plaintext = dumps(self.cached_dict)
         self.coded_dict = enc(plaintext, self._get_master(minor))
@@ -77,18 +79,19 @@ class SingleCodedMystic(Mystic):
             ep = src.read(l)
             self.encrypted_passwords.append(ep)
         self.coded_dict = src.read()
-        assert self.coded_dict[-1]!=b'\n'
+        assert self.coded_dict[-1] != b'\n'
         return self
 
     def to_stream(self, dst: BytesIO, minor=None):
         if not self.encrypted_passwords:
-            raise Exception('this mystic has no passwords set, it will be inaccessible unless at least one passwords is added')
-        dst.write(self.header+b'\n')
+            raise Exception(
+                'this mystic has no passwords set, it will be inaccessible unless at least one passwords is added')
+        dst.write(self.header + b'\n')
         if len(self.encrypted_passwords) >= 256:
             raise Exception('too many passwords in singe coded mystic')
         dst.write(bytes([len(self.encrypted_passwords)]))
         for ep in self.encrypted_passwords:
-            if len(ep)>256:
+            if len(ep) > 256:
                 raise Exception(f'password too long: {ep}')
             dst.write(bytes([len(ep)]))
             dst.write(ep)
@@ -122,7 +125,6 @@ class SingleCodedMystic(Mystic):
         self._get_dict(minor)[key] = value
         self._changed = True
 
-
     def __delitem__(self, key, minor=None):
         del self._get_dict(minor)[key]
         self._changed = True
@@ -149,10 +151,10 @@ class SingleCodedMystic(Mystic):
     def __iter__(self):
         return iter(self._get_dict())
 
-    def get(self,*args,minor=None,**kwargs):
+    def get(self, *args, minor=None, **kwargs):
         if minor is None:
-            return super().get(*args,**kwargs)
-        return self.load(minor=minor).get(*args,**kwargs)
+            return super().get(*args, **kwargs)
+        return self.load(minor=minor).get(*args, **kwargs)
 
     def changed(self):
         return self._changed

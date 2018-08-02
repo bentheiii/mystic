@@ -8,12 +8,20 @@ from mysticlib import Mystic
 
 from mysticCLI.resettable_timer import ResettableTimer
 from mysticCLI.commands import Command
-from mysticCLI.__data import __version__, __author__
+from mysticCLI.__data import __version__
 from mysticCLI.__util import *
 
+try:
+    import tkinter as tk
+    from tkinter import filedialog as tk_filedialog
+except ImportError:
+    tk = None
+
 parser = argparse.ArgumentParser(description='A CLI tool for mystic files')
-parser.add_argument('source', action='store', type=str, default='!', nargs='?',
-                    help='the source mystic to load. * denotes a new file, a format can be specified after the *. Default is to ask for prompt. ! to ask for prompt.')
+parser.add_argument('source', action='store', type=str, default=':', nargs='?',
+                    help='the source mystic to load. * denotes a new file, a format can be specified after the *.'
+                         'Default is to ask for prompt. : to ask for prompt.'
+                         f'{" ? for a pop-up dialog" if tk else ""}')
 parser.add_argument('-t', action='store', type=int, default=30, required=False, dest='timeout',
                     help='time, in minutes, before the program automatically shuts down, -1 to disable this feature.')
 parser.add_argument('-w', action='store', type=bool_or_ellipsis, default=..., required=False, dest='write',
@@ -62,16 +70,26 @@ def handle_line(line: str, *, throw, **kwargs) -> bool:
 
 
 def main(args=None):
+    kwargs = {}
+    if tk:
+        tk_root = tk.Tk()
+        tk_root.withdraw()
+        kwargs['tk_root'] = tk_root
+        del tk_root
+
     args = parser.parse_args(args)
 
-    if args.timeout < 0:
-        timer = GreyHole()
-    else:
-        timer = ResettableTimer(args.timeout * 60, sys.exit)
-    kwargs = {}
+    while args.source == ':':
+        args.source = input('input file or method. * is for new file.'
+                            f'{" ? for a pop-up dialog" if tk else ""}'
+                            '\n')
 
-    while args.source == '!':
-        args.source = input('input file or method. * is for new file.\n')
+    if args.source == '?':
+        if not tk:
+            raise ImportError('the tkinter module could not be imported, this functionality is not available')
+        args.source = tk_filedialog.askopenfilename(filetypes=(("mystic files", "*.scm"), ("all files", "*.*")))
+        if not args.source:
+            exit()
 
     if args.source.startswith('*'):
         form = args.source[1:]
@@ -83,12 +101,19 @@ def main(args=None):
         with open(args.source, mode='br') as source:
             myst = Mystic.from_stream(source)
 
+    if args.timeout < 0:
+        timer = GreyHole()
+    else:
+        timer = ResettableTimer(args.timeout * 60, sys.exit)
+
     kwargs['commands'] = Command
 
     if args.nsecure:
         myst.password_callback = input
     else:
         myst.password_callback = partial(getpass, stream=sys.stdout)
+
+    kwargs['getpass'] = myst.password_callback
 
     if (not myst.mutable) and args.write:
         try:
