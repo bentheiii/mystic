@@ -12,6 +12,10 @@ try:
     import pyperclip
 except ImportError:
     pyperclip = None
+try:
+    import tkinter as tk
+except ImportError:
+    tk = None
 
 from mysticlib import Mystic
 import mysticlib
@@ -435,13 +439,37 @@ def delete_lookup(*, myst, **kwargs):
     return 'pair deleted'
 
 
+def _get_module_details(mod):
+    name = mod.__name__
+    vers = getattr(mod, '__version__', None)
+    by = getattr(mod, '__author__', None)
+    license_ = getattr(mod, '__license__', None)
+    cr = getattr(mod, '__copyright__', None)
+    ret = [name]
+    if vers:
+        ret.append('v' + vers)
+    if by:
+        ret.append('made by ' + by)
+    if license_:
+        ret.append(license_)
+    if cr:
+        ret.append(cr)
+    if len(ret) == 1:
+        return ret[0]
+    return ret[0] + ': ' + ', '.join(ret[1:])
+
+
 @Command
 def version(**kwargs):
     """
-    Display the version of this tool as well the version of all dependant libraries.
+    Display the version of this tool as well the versions and authors of all dependant libraries.
     """
-    modules = [('mysticCLI', data), ('mysticlib', mysticlib), ('cryptography', cryptography)]
-    ret = '\n'.join(f'{n} v{v.__version__}' for (n, v) in modules)
+    modules = [data, mysticlib, cryptography]
+    if pyperclip:
+        modules.append(pyperclip)
+    if tk:
+        modules.append(tk)
+    ret = '\n'.join(_get_module_details(m) for m in modules)
     return ret
 
 
