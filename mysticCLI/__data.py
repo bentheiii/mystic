@@ -1,3 +1,3 @@
-__version__ = '0.8'
+__version__ = '0.8.1'
 __author__ = 'Ben Avrahami'
 __name__ = 'mysticCLI'

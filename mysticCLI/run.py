@@ -2,6 +2,7 @@ from getpass import getpass
 from functools import partial
 import argparse
 import sys
+import os
 import warnings
 
 from mysticlib import Mystic
@@ -22,7 +23,7 @@ parser.add_argument('source', action='store', type=str, default=':', nargs='?',
                     help='the source mystic to load. * denotes a new file, a format can be specified after the *.'
                          'Default is to ask for prompt. : to ask for prompt.'
                          f'{" ? for a pop-up dialog" if tk else ""}')
-parser.add_argument('-t', action='store', type=int, default=30, required=False, dest='timeout',
+parser.add_argument('-t', action='store', type=float, default=30, required=False, dest='timeout',
                     help='time, in minutes, before the program automatically shuts down, -1 to disable this feature.')
 parser.add_argument('-w', action='store', type=bool_or_ellipsis, default=..., required=False, dest='write',
                     help='whether to set the file to be writeable or not, default is to try, but not exit when failing')
@@ -104,7 +105,7 @@ def main(args=None):
     if args.timeout < 0:
         timer = GreyHole()
     else:
-        timer = ResettableTimer(args.timeout * 60, sys.exit)
+        timer = ResettableTimer(args.timeout * 60, lambda: os._exit(0))
 
     kwargs['commands'] = Command
 
